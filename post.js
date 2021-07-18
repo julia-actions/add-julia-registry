@@ -1,8 +1,8 @@
-const { exec } = require("@actions/exec");
+const exec = require("@actions/exec");
 
 const post = async () => {
-  await exec("git config --global --unset url.git@github.com:.insteadOf");
-  await exec("ssh-agent -k");
+  await exec.exec("git config --global --unset url.git@github.com:.insteadOf");
+  await exec.exec("ssh-agent -k");
 };
 
 if (!module.parent) {

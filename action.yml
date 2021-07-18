@@ -2,7 +2,7 @@ name: Add Julia Registry
 author: Chris de Graaf
 description: Clone a private Julia registry and configure Pkg access
 inputs:
-  ssh-private-key:
+  key:
     description: SSH private key contents
     required: true
   registry:

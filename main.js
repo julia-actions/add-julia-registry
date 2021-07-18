@@ -9,7 +9,7 @@ const core = ("@actions/core");
 const exec = require("@actions/exec");
 const io = require("@actions/io");
 
-const key = core.getInput("ssh-private-key", { required: true });
+const key = core.getInput("key", { required: true });
 const registry = core.getInput("registry", { required: true });
 
 const home = os.homedir();
