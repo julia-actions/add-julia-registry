@@ -8,6 +8,5 @@ const post = async () => {
 if (!module.parent) {
   post().catch(e => {
     console.error(e);
-    process.exit(1);
   });
 }

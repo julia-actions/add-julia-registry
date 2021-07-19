@@ -5,7 +5,7 @@ const path = require("path");
 const tmp = require("tmp");
 const toml = require('toml');
 
-const core = ("@actions/core");
+const core = require("@actions/core");
 const exec = require("@actions/exec");
 const io = require("@actions/io");
 
@@ -14,10 +14,10 @@ const registry = core.getInput("registry", { required: true });
 
 const home = os.homedir();
 
-const startAgent = () => {
+const startAgent = async () => {
   const { stdout } = await exec.getExecOutput("ssh-agent");
   stdout.split("\n").forEach(line => {
-    const match = /(.*)=(.*);/.exec(line);
+    const match = /(.*)=(.*?);/.exec(line);
     if (match) {
       core.exportVariable(match[1], match[2]);
     }
@@ -26,29 +26,31 @@ const startAgent = () => {
 
 const addKey = async () => {
   const { name } = tmp.fileSync();
-  fs.writeFileSync(name, key.strip() + "\n");
+  fs.writeFileSync(name, key.trim() + "\n");
   await exec.exec(`ssh-add ${name}`);
+  await io.rmRF(name);
 };
 
 const updateKnownHosts = async () => {
-  const { stdout } = exec.getExecOutput(`ssh-keyscan github.com`);
+  const { stdout } = await exec.getExecOutput("ssh-keyscan github.com");
+  await io.mkdirP(path.join(home, ".ssh"));
   fs.appendFileSync(path.join(home, ".ssh", "known_hosts"), stdout);
 }
 
 const cloneRegistry = async () => {
   const tmpdir = tmp.dirSync().name;
   await exec.exec(`git clone git@github.com:${registry}.git ${tmpdir}`);
-  const meta = toml.parse(readFileSync(path.join(tmpdir, "Registry.toml")));
+  const meta = toml.parse(fs.readFileSync(path.join(tmpdir, "Registry.toml")));
   const name = meta.name || registry.split("/")[1];
   const depot = process.env.JULIA_DEPOT_PATH || path.join(home, ".julia");
-  io.mv(tmpdir, path.join(depot, "registries", name));
+  await io.mv(tmpdir, path.join(depot, "registries", name));
   const general = path.join(depot, "registries", "General");
   if (!fs.existsSync(general)) {
     await exec.exec(`git clone git@github.com:JuliaRegistries/General.git ${general}`);
   }
 };
 
-const configureGit = {
+const configureGit = async () => {
   await exec.exec("git config --global url.git@github.com:.insteadOf https://github.com/");
 };
 
