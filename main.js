@@ -1,4 +1,4 @@
-const fs = require("fs");
+const fs = require("fs-extra");
 const os = require("os");
 const path = require("path");
 
@@ -43,7 +43,7 @@ const cloneRegistry = async () => {
   const meta = toml.parse(fs.readFileSync(path.join(tmpdir, "Registry.toml")));
   const name = meta.name || registry.split("/")[1];
   const depot = process.env.JULIA_DEPOT_PATH || path.join(home, ".julia");
-  await io.mv(tmpdir, path.join(depot, "registries", name));
+  fs.moveSync(tmpdir, path.join(depot, "registries", name));
   const general = path.join(depot, "registries", "General");
   if (!fs.existsSync(general)) {
     await exec.exec(`git clone git@github.com:JuliaRegistries/General.git ${general}`);
