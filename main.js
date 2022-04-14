@@ -54,7 +54,7 @@ const cloneRegistry = async () => {
 };
 
 const configureGit = async () => {
-  await exec.exec("git config --global url."ssh://git@github.com/".pushInsteadOf https://github.com/");
+  await exec.exec("git config --global url.'ssh://git@github.com/'.pushInsteadOf https://github.com/");
 };
 
 const main = async () => {
