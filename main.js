@@ -38,7 +38,7 @@ const updateKnownHosts = async () => {
 }
 
 const cloneRegistry = async () => {
-  const tmpdir = tmp.dirSync().name;
+  const {name: tmpdir, removeCallback: tmpdirCleanup} = tmp.dirSync();
   await exec.exec(`git clone git@github.com:${registry}.git ${tmpdir}`);
   const meta = toml.parse(fs.readFileSync(path.join(tmpdir, "Registry.toml")));
   const name = meta.name || registry.split("/")[1];
@@ -47,6 +47,7 @@ const cloneRegistry = async () => {
   if (!fs.existsSync(dest)) {
     fs.moveSync(tmpdir, dest);
   }
+  tmpdirCleanup();
   const general = path.join(depot, "registries", "General");
   if (!fs.existsSync(general)) {
     await exec.exec(`git clone git@github.com:JuliaRegistries/General.git ${general}`);
