@@ -44,10 +44,11 @@ const cloneRegistry = async () => {
   const name = meta.name || registry.split("/")[1];
   const depot = process.env.JULIA_DEPOT_PATH || path.join(home, ".julia");
   const dest = path.join(depot, "registries", name);
-  if (!fs.existsSync(dest)) {
+  if (fs.existsSync(dest)) {
+    tmpdirCleanup();
+  } else {
     fs.moveSync(tmpdir, dest);
   }
-  tmpdirCleanup();
   const general = path.join(depot, "registries", "General");
   if (!fs.existsSync(general)) {
     await exec.exec(`git clone git@github.com:JuliaRegistries/General.git ${general}`);
