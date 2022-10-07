@@ -38,7 +38,7 @@ const updateKnownHosts = async () => {
 }
 
 const cloneRegistry = async () => {
-  const {name: tmpdir, removeCallback: tmpdirCleanup} = tmp.dirSync();
+  const { name: tmpdir, removeCallback: tmpdirCleanup } = tmp.dirSync({ unsafeCleanup: true });
   await exec.exec(`git clone git@github.com:${registry}.git ${tmpdir}`);
   const meta = toml.parse(fs.readFileSync(path.join(tmpdir, "Registry.toml")));
   const name = meta.name || registry.split("/")[1];
