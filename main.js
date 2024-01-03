@@ -12,7 +12,8 @@ const io = require("@actions/io");
 const key = core.getInput("key", { required: true });
 const registry = core.getInput("registry", { required: true });
 
-const home = os.homedir();
+const HOME = os.homedir();
+const DEPOT_PATH = (process.env.JULIA_DEPOT_PATH || path.join(HOME, ".julia")).split(path.delimiter);
 
 const startAgent = async () => {
   const { stdout } = await exec.getExecOutput("ssh-agent");
@@ -33,8 +34,8 @@ const addKey = async () => {
 
 const updateKnownHosts = async () => {
   const { stdout } = await exec.getExecOutput("ssh-keyscan github.com");
-  await io.mkdirP(path.join(home, ".ssh"));
-  fs.appendFileSync(path.join(home, ".ssh", "known_hosts"), stdout);
+  await io.mkdirP(path.join(HOME, ".ssh"));
+  fs.appendFileSync(path.join(HOME, ".ssh", "known_hosts"), stdout);
 }
 
 const cloneRegistry = async () => {
@@ -42,8 +43,7 @@ const cloneRegistry = async () => {
   await exec.exec(`git clone git@github.com:${registry}.git ${tmpdir}`);
   const meta = toml.parse(fs.readFileSync(path.join(tmpdir, "Registry.toml")));
   const name = meta.name || registry.split("/")[1];
-  const depot = process.env.JULIA_DEPOT_PATH || path.join(home, ".julia");
-  const user_depot = depot.split(path.delimiter)[0];
+  const user_depot = DEPOT_PATH[0];
   const dest = path.join(user_depot, "registries", name);
   if (fs.existsSync(dest)) {
     tmpdirCleanup();
