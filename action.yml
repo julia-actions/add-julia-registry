@@ -8,6 +8,9 @@ inputs:
   registry:
     description: Registry to clone (owner/repo)
     required: true
+  clone-general-registry:
+    description: Enable cloning of the General Julia registry
+    default: true
 runs:
   using: node16
   main: main.js

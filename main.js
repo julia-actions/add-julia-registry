@@ -40,18 +40,20 @@ async function cloneRegistry(registry) {
   await exec.exec(`git clone git@github.com:${registry}.git ${tmpdir}`);
   const meta = toml.parse(fs.readFileSync(path.join(tmpdir, "Registry.toml")));
   const name = meta.name || registry.split("/")[1];
-  const user_depot = DEPOT_PATH[0];
-  const dest = path.join(user_depot, "registries", name);
+  const dest = path.join(DEPOT_PATH[0], "registries", name);
   if (fs.existsSync(dest)) {
     tmpdirCleanup();
   } else {
     fs.moveSync(tmpdir, dest);
   }
-  const general = path.join(user_depot, "registries", "General");
+};
+
+async function cloneGeneralRegistry() {
+  const general = path.join(DEPOT_PATH[0], "registries", "General");
   if (!fs.existsSync(general)) {
     await exec.exec(`git clone git@github.com:JuliaRegistries/General.git ${general}`);
   }
-};
+}
 
 async function configureGit() {
   await exec.exec("git config --global url.git@github.com:.insteadOf https://github.com/");
@@ -60,11 +62,15 @@ async function configureGit() {
 async function main() {
   const key = core.getInput("key", { required: true });
   const registry = core.getInput("registry", { required: true });
+  const clone_general_registry = core.getInput("clone-general-registry");
 
   await startAgent();
   await addKey(key);
   await updateKnownHosts();
   await cloneRegistry(registry);
+  if (clone_general_registry) {
+    await cloneGeneralRegistry();
+  }
   await configureGit();
 }
 
