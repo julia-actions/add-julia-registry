@@ -41,22 +41,18 @@ function getRegistryName(registry_dir) {
 }
 
 async function cloneRegistry(url, name) {
-  if (typeof name !== "undefined") {
-    const registry_dir = path.join(DEPOT_PATH[0], "registries", name);
-    fs.existsSync(registry_dir) && return
+  const registry_name = name || url.match(/([^\/]+)\.git$/)[1]
+  const registry_dir = path.join(DEPOT_PATH[0], "registries", registry_name);
+  if (!fs.existsSync(registry_dir)) {
     await exec.exec(`git clone ${url} ${registry_dir}`);
-  } else {
-    const tmp_name = url.match(/([^\/]+)\.git$/)[1]
-    const tmp_registry_dir = path.join(DEPOT_PATH[0], "registries", tmp_name);
-    fs.existsSync(tmp_registry_dir) && return
-    await exec.exec(`git clone ${url} ${tmp_registry_dir}`);
-    name = getRegistryName(tmp_registry_dir)
-    const registry_dir = path.join(DEPOT_PATH[0], "registries", name);
-    if (fs.existsSync(registry_dir)) {
-      fs.rmSync(tmp_registry_dir, { recursive: true, force: true });
-    } else {
-      fs.moveSync(tmp_registry_dir, registry_dir);
-    }
+  }
+
+  // When the registry name differs from the repo name we'll create a symlink for backwards
+  // compatibility. When running `Pkg.Registry.update()` Julia will only update one of
+  // these registries which avoids unnecessary overhead.
+  const alt_registry_dir = path.join(DEPOT_PATH[0], "registries", getRegistryName(registry_dir));
+  if (registry_dir != alt_registry_dir && !fs.existsSync(alt_registry_dir)) {
+    fs.symlink(registry_dir, alt_registry_dir, "dir")
   }
 };
 
@@ -67,11 +63,12 @@ async function configureGit() {
 async function main() {
   const key = core.getInput("key", { required: true });
   const registry = core.getInput("registry", { required: true });
+  const registry_name = core.getInput("registry-name");
 
   await startAgent();
   await addKey(key);
   await updateKnownHosts();
-  await cloneRegistry(`git@github.com:${registry}.git`);
+  await cloneRegistry(`git@github.com:${registry}.git`, registry_name);
   await cloneRegistry("git@github.com:JuliaRegistries/General.git", "General");
   await configureGit();
 }
