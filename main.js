@@ -35,21 +35,28 @@ async function updateKnownHosts() {
   fs.appendFileSync(path.join(HOME, ".ssh", "known_hosts"), stdout);
 }
 
-async function cloneRegistry(registry) {
-  const { name: tmpdir, removeCallback: tmpdirCleanup } = tmp.dirSync({ unsafeCleanup: true });
-  await exec.exec(`git clone git@github.com:${registry}.git ${tmpdir}`);
-  const meta = toml.parse(fs.readFileSync(path.join(tmpdir, "Registry.toml")));
-  const name = meta.name || registry.split("/")[1];
-  const user_depot = DEPOT_PATH[0];
-  const dest = path.join(user_depot, "registries", name);
-  if (fs.existsSync(dest)) {
-    tmpdirCleanup();
+function getRegistryName(registry_dir) {
+  const meta = toml.parse(fs.readFileSync(path.join(registry_dir, "Registry.toml")));
+  return meta.name || registry.split("/").pop();
+}
+
+async function cloneRegistry(url, name) {
+  if (typeof name !== "undefined") {
+    const registry_dir = path.join(DEPOT_PATH[0], "registries", name);
+    fs.existsSync(registry_dir) && return
+    await exec.exec(`git clone ${url} ${registry_dir}`);
   } else {
-    fs.moveSync(tmpdir, dest);
-  }
-  const general = path.join(user_depot, "registries", "General");
-  if (!fs.existsSync(general)) {
-    await exec.exec(`git clone git@github.com:JuliaRegistries/General.git ${general}`);
+    const tmp_name = url.match(/([^\/]+)\.git$/)[1]
+    const tmp_registry_dir = path.join(DEPOT_PATH[0], "registries", tmp_name);
+    fs.existsSync(tmp_registry_dir) && return
+    await exec.exec(`git clone ${url} ${tmp_registry_dir}`);
+    name = getRegistryName(tmp_registry_dir)
+    const registry_dir = path.join(DEPOT_PATH[0], "registries", name);
+    if (fs.existsSync(registry_dir)) {
+      fs.rmSync(tmp_registry_dir, { recursive: true, force: true });
+    } else {
+      fs.moveSync(tmp_registry_dir, registry_dir);
+    }
   }
 };
 
@@ -64,7 +71,8 @@ async function main() {
   await startAgent();
   await addKey(key);
   await updateKnownHosts();
-  await cloneRegistry(registry);
+  await cloneRegistry(`git@github.com:${registry}.git`);
+  await cloneRegistry("git@github.com:JuliaRegistries/General.git", "General");
   await configureGit();
 }
 
