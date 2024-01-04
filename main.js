@@ -50,10 +50,15 @@ async function cloneRegistry(url) {
   // When the registry name differs from the repo name we'll create a symlink for backwards
   // compatibility. When running `Pkg.Registry.update()` Julia will only update one of
   // these registries which avoids unnecessary overhead.
-  const alt_registry_dir = path.join(DEPOT_PATH[0], "registries", getRegistryName(registry_dir));
+  console.log("Get registry name")
+  const registry_name = getRegistryName(registry_dir)
+  console.log(`registry name = {registry_name}`)
+
+  const alt_registry_dir = path.join(DEPOT_PATH[0], "registries", registry_name);
   if (registry_dir != alt_registry_dir && !fs.existsSync(alt_registry_dir)) {
     fs.symlink(registry_dir, alt_registry_dir, "dir")
   }
+  console.log("symlink complete")
 };
 
 async function configureGit() {
