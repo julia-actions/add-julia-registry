@@ -63,12 +63,11 @@ async function configureGit() {
 async function main() {
   const key = core.getInput("key", { required: true });
   const registry = core.getInput("registry", { required: true });
-  const registry_name = core.getInput("registry-name");
 
   await startAgent();
   await addKey(key);
   await updateKnownHosts();
-  await cloneRegistry(`git@github.com:${registry}.git`, registry_name);
+  await cloneRegistry(`git@github.com:${registry}.git`);
   if (registry != "JuliaRegistries/General") {
     await cloneRegistry("git@github.com:JuliaRegistries/General.git", "General");
   }
