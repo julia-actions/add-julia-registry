@@ -62,7 +62,7 @@ async function configureGit() {
 async function main() {
   const key = core.getInput("key", { required: true });
   const registry = core.getInput("registry", { required: true });
-  const clone_general_registry = core.getInput("clone-general-registry");
+  const clone_general_registry = core.getBooleanInput("clone-general-registry");
 
   await startAgent();
   await addKey(key);
