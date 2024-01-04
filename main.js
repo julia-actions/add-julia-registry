@@ -9,9 +9,6 @@ const core = require("@actions/core");
 const exec = require("@actions/exec");
 const io = require("@actions/io");
 
-const key = core.getInput("key", { required: true });
-const registry = core.getInput("registry", { required: true });
-
 const HOME = os.homedir();
 const DEPOT_PATH = (process.env.JULIA_DEPOT_PATH || path.join(HOME, ".julia")).split(path.delimiter);
 
@@ -25,7 +22,7 @@ async function startAgent() {
   });
 }
 
-async function addKey() {
+async function addKey(key) {
   const { name } = tmp.fileSync();
   fs.writeFileSync(name, key.trim() + "\n");
   await exec.exec(`ssh-add ${name}`);
@@ -38,7 +35,7 @@ async function updateKnownHosts() {
   fs.appendFileSync(path.join(HOME, ".ssh", "known_hosts"), stdout);
 }
 
-async function cloneRegistry() {
+async function cloneRegistry(registry) {
   const { name: tmpdir, removeCallback: tmpdirCleanup } = tmp.dirSync({ unsafeCleanup: true });
   await exec.exec(`git clone git@github.com:${registry}.git ${tmpdir}`);
   const meta = toml.parse(fs.readFileSync(path.join(tmpdir, "Registry.toml")));
@@ -61,10 +58,13 @@ async function configureGit() {
 }
 
 async function main() {
+  const key = core.getInput("key", { required: true });
+  const registry = core.getInput("registry", { required: true });
+
   await startAgent();
-  await addKey();
+  await addKey(key);
   await updateKnownHosts();
-  await cloneRegistry();
+  await cloneRegistry(registry);
   await configureGit();
 }
 
