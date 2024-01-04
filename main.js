@@ -44,7 +44,7 @@ async function cloneRegistry(url, name) {
   const registry_name = name || url.match(/([^\/]+)\.git$/)[1]
   const registry_dir = path.join(DEPOT_PATH[0], "registries", registry_name);
   if (!fs.existsSync(registry_dir)) {
-    await exec.exec(`git clone ${url} ${registry_dir}`);
+    await exec.exec(`git clone --no-progress ${url} ${registry_dir}`);
   }
 
   // When the registry name differs from the repo name we'll create a symlink for backwards
