@@ -3,7 +3,7 @@ const os = require("os");
 const path = require("path");
 
 const tmp = require("tmp");
-const toml = require('toml');
+const toml = require("toml");
 
 const core = require("@actions/core");
 const exec = require("@actions/exec");
