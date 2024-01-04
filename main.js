@@ -69,7 +69,9 @@ async function main() {
   await addKey(key);
   await updateKnownHosts();
   await cloneRegistry(`git@github.com:${registry}.git`, registry_name);
-  await cloneRegistry("git@github.com:JuliaRegistries/General.git", "General");
+  if (registry != "JuliaRegistries/General") {
+    await cloneRegistry("git@github.com:JuliaRegistries/General.git", "General");
+  }
   await configureGit();
 }
 
