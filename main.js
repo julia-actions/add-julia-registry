@@ -40,9 +40,9 @@ function getRegistryName(registry_dir) {
   return meta.name || registry.split("/").pop();
 }
 
-async function cloneRegistry(url, name) {
-  const registry_name = name || url.match(/([^\/]+)\.git$/)[1]
-  const registry_dir = path.join(DEPOT_PATH[0], "registries", registry_name);
+async function cloneRegistry(url) {
+  const repo_name = url.match(/([^\/]+)\.git$/)[1]
+  const registry_dir = path.join(DEPOT_PATH[0], "registries", repo_name);
   if (!fs.existsSync(registry_dir)) {
     await exec.exec(`git clone --no-progress ${url} ${registry_dir}`);
   }
@@ -69,7 +69,7 @@ async function main() {
   await updateKnownHosts();
   await cloneRegistry(`git@github.com:${registry}.git`);
   if (registry != "JuliaRegistries/General") {
-    await cloneRegistry("git@github.com:JuliaRegistries/General.git", "General");
+    await cloneRegistry("git@github.com:JuliaRegistries/General.git");
   }
   await configureGit();
 }
