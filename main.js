@@ -41,8 +41,10 @@ function getRegistryName(registry_dir) {
 }
 
 async function cloneRegistry(url, name) {
+  // Use a consistent registry directory between CI jobs to ensure that this action works
+  // well with CI caching.
   const repo_name = url.match(/([^\/]+)\.git$/)[1]
-  const registry_dir = path.join(DEPOT_PATH[0], "registries", repo_name);
+  const registry_dir = path.join(DEPOT_PATH[0], "registries", name || repo_name);
   if (!fs.existsSync(registry_dir)) {
     await exec.exec(`git clone --no-progress ${url} ${registry_dir}`);
   }
@@ -50,14 +52,16 @@ async function cloneRegistry(url, name) {
   // We have observed that toml parsing can be quite slow. We use the passed in name
   // to work around this problem.
   // https://github.com/julia-actions/add-julia-registry/pull/25#issuecomment-1877708220
-  const registry_name = name || getRegistryName(registry_dir)
-  const alt_registry_dir = path.join(DEPOT_PATH[0], "registries", registry_name);
+  // Mainly, this exists for backwards compatibility.
+  if (!name) {
+    const registry_name = getRegistryName(registry_dir)
+    const alt_registry_dir = path.join(DEPOT_PATH[0], "registries", registry_name);
 
-  // When the registry name differs from the repo name we'll create a symlink for backwards
-  // compatibility. When running `Pkg.Registry.update()` Julia will only update one of
-  // these registries which avoids unnecessary overhead.
-  if (registry_dir != alt_registry_dir && !fs.existsSync(alt_registry_dir)) {
-    fs.symlink(registry_dir, alt_registry_dir, "dir")
+    // Adding an alternate registry name via a symlink works well with Julia's
+    // `Pkg.Registry.update()` as that call will only one of the registries and not both.
+    if (registry_dir != alt_registry_dir && !fs.existsSync(alt_registry_dir)) {
+      fs.symlink(registry_dir, alt_registry_dir, "dir")
+    }
   }
 };
 
