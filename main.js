@@ -35,21 +35,33 @@ async function updateKnownHosts() {
   fs.appendFileSync(path.join(HOME, ".ssh", "known_hosts"), stdout);
 }
 
-async function cloneRegistry(registry) {
-  const { name: tmpdir, removeCallback: tmpdirCleanup } = tmp.dirSync({ unsafeCleanup: true });
-  await exec.exec(`git clone git@github.com:${registry}.git ${tmpdir}`);
-  const meta = toml.parse(fs.readFileSync(path.join(tmpdir, "Registry.toml")));
-  const name = meta.name || registry.split("/")[1];
-  const user_depot = DEPOT_PATH[0];
-  const dest = path.join(user_depot, "registries", name);
-  if (fs.existsSync(dest)) {
-    tmpdirCleanup();
-  } else {
-    fs.moveSync(tmpdir, dest);
+function getRegistryName(registry_dir) {
+  const meta = toml.parse(fs.readFileSync(path.join(registry_dir, "Registry.toml")));
+  return meta.name || registry.split("/").pop();
+}
+
+async function cloneRegistry(url, name) {
+  // Use a consistent registry directory between CI jobs to ensure that this action works
+  // well with CI caching.
+  const repo_name = url.match(/([^\/]+)\.git$/)[1]
+  const registry_dir = path.join(DEPOT_PATH[0], "registries", name || repo_name);
+  if (!fs.existsSync(registry_dir)) {
+    await exec.exec(`git clone --no-progress ${url} ${registry_dir}`);
   }
-  const general = path.join(user_depot, "registries", "General");
-  if (!fs.existsSync(general)) {
-    await exec.exec(`git clone git@github.com:JuliaRegistries/General.git ${general}`);
+
+  // We have observed that toml parsing can be quite slow. We use the passed in name
+  // to work around this problem.
+  // https://github.com/julia-actions/add-julia-registry/pull/25#issuecomment-1877708220
+  // Mainly, this exists for backwards compatibility.
+  if (!name) {
+    const registry_name = getRegistryName(registry_dir)
+    const alt_registry_dir = path.join(DEPOT_PATH[0], "registries", registry_name);
+
+    // Adding an alternate registry name via a symlink works well with Julia's
+    // `Pkg.Registry.update()` as that call will only one of the registries and not both.
+    if (registry_dir != alt_registry_dir && !fs.existsSync(alt_registry_dir)) {
+      fs.symlink(registry_dir, alt_registry_dir, "dir")
+    }
   }
 };
 
@@ -64,7 +76,10 @@ async function main() {
   await startAgent();
   await addKey(key);
   await updateKnownHosts();
-  await cloneRegistry(registry);
+  await cloneRegistry(`git@github.com:${registry}.git`);
+  if (registry != "JuliaRegistries/General") {
+    await cloneRegistry("git@github.com:JuliaRegistries/General.git", "General");
+  }
   await configureGit();
 }
 
