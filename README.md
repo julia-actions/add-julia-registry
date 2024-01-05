@@ -9,13 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: 1
       - uses: julia-actions/add-julia-registry@v1
         with:
           key: ${{ secrets.SSH_KEY }}
           registry: MyOrg/MyRegistry
-      - uses: julia-actions/setup-julia@v1
-        with:
-          version: 1
       - uses: julia-actions/julia-runtest@v1
 ```
 
