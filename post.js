@@ -1,11 +1,11 @@
 const core = require("@actions/core");
 const exec = require("@actions/exec");
 
-const undoGitConfig = async () => {
+async function undoGitConfig() {
   await exec.exec("git config --global --unset url.git@github.com:.insteadOf");
-};
+}
 
-const stopAgent = async () => {
+async function stopAgent() {
   const { stdout } = await exec.getExecOutput("ssh-agent -k");
   stdout.split("\n").forEach(line => {
     const match = /unset (.*);/.exec(line);
@@ -13,12 +13,12 @@ const stopAgent = async () => {
       core.exportVariable(match[1], "");
     }
   });
-};
+}
 
-const post = async () => {
+async function post() {
   await undoGitConfig();
   await stopAgent();
-};
+}
 
 if (!module.parent) {
   post().catch(e => {
