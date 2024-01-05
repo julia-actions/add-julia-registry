@@ -30,9 +30,15 @@ async function addKey(key) {
 }
 
 async function updateKnownHosts() {
-  const { stdout } = await exec.getExecOutput("ssh-keyscan github.com");
-  await io.mkdirP(path.join(HOME, ".ssh"));
-  fs.appendFileSync(path.join(HOME, ".ssh", "known_hosts"), stdout);
+  // Ensure that `known_hosts` always exists
+  const known_hosts_path = path.join(home, ".ssh", "known_hosts");
+  fs.ensureFileSync(known_hosts_path);
+  
+  // If we don't already have a mapping for `github.com`, get it automatically
+  if ((await exec.exec("ssh-keygen", ["-F", "github.com"], { ignoreReturnCode: true })) != 0) {
+    const { stdout } = await exec.getExecOutput("ssh-keyscan github.com");
+    fs.appendFileSync(known_hosts_path, stdout);
+  }
 }
 
 function getRegistryName(registry_dir) {
