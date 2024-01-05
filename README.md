@@ -24,7 +24,7 @@ This action does the following:
 
 - Starts [ssh-agent](https://linux.die.net/man/1/ssh-agent)
 - Adds your private key to the agent
-- Configures Git to rewrite HTTPS URLs (https://github.com/foo/bar) to SSH URLs (git@github.com:foo/bar)
+- Configures Git to rewrite HTTPS URLs (`https://github.com/foo/bar`) to SSH URLs (`git@github.com:foo/bar`)
 - Downloads the registry you specify and [General](https://github.com/JuliaRegistries/General)
 
 Therefore, when Pkg tries to download packages from the HTTPS URLs in the registry, it will do so over SSH, using your private key as authentication.
