@@ -31,7 +31,7 @@ async function addKey(key) {
 
 async function updateKnownHosts() {
   // Ensure that `known_hosts` always exists
-  const known_hosts_path = path.join(home, ".ssh", "known_hosts");
+  const known_hosts_path = path.join(HOME, ".ssh", "known_hosts");
   fs.ensureFileSync(known_hosts_path);
   
   // If we don't already have a mapping for `github.com`, get it automatically
