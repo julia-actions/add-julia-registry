@@ -53,6 +53,8 @@ async function cloneRegistry(url, name) {
   const registry_dir = path.join(DEPOT_PATH[0], "registries", name || repo_name);
   if (!fs.existsSync(registry_dir)) {
     await exec.exec(`git clone --no-progress ${url} ${registry_dir}`);
+  } else {
+    await exec.exec(`git -C ${registry_dir} pull`);
   }
 
   // We have observed that toml parsing can be quite slow. We use the passed in name
