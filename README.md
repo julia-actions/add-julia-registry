@@ -12,7 +12,7 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: 1
-      - uses: julia-actions/cache@v1
+      - uses: julia-actions/cache@v2
       - uses: julia-actions/add-julia-registry@v2
         with:
           key: ${{ secrets.SSH_KEY }}
