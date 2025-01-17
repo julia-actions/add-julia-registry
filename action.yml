@@ -2,12 +2,18 @@ name: Add Julia Registry
 author: Chris de Graaf
 description: Clone a private Julia registry and configure Pkg access
 inputs:
-  key:
-    description: SSH private key contents
-    required: true
   registry:
     description: Registry to clone (owner/repo)
     required: true
+  protocol:
+    description: Protocol to use when cloning GitHub repositories. Either `ssh` or `https`.
+    default: ssh
+  ssh-key:
+    description: SSH private key contents when cloning with SSH.
+    required: false
+  github-token:
+    description: The GitHub token to use when cloning with HTTPS.
+    default: ${{ github.token }}
 runs:
   using: node20
   main: main.js

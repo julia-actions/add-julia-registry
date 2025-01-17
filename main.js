@@ -12,7 +12,7 @@ const io = require("@actions/io");
 const HOME = os.homedir();
 const DEPOT_PATH = (process.env.JULIA_DEPOT_PATH || path.join(HOME, ".julia")).split(path.delimiter);
 
-async function startAgent() {
+async function startSshAgent() {
   const { stdout } = await exec.getExecOutput("ssh-agent");
   stdout.split("\n").forEach(line => {
     const match = /(.*)=(.*?);/.exec(line);
@@ -22,7 +22,7 @@ async function startAgent() {
   });
 }
 
-async function addKey(key) {
+async function addSshKey(key) {
   const { name } = tmp.fileSync();
   fs.writeFileSync(name, key.trim() + "\n");
   await exec.exec(`ssh-add ${name}`);
@@ -73,22 +73,36 @@ async function cloneRegistry(url, name) {
   }
 };
 
-async function configureGit() {
-  await exec.exec("git config --global url.git@github.com:.insteadOf https://github.com/");
+async function configureGitInsteadOfSsh() {
+  await exec.exec(`git config --global url."git@github.com:".insteadOf https://github.com/`);
+}
+
+async function configureGitInsteadOfHttps(github_token) {
+  await exec.exec(`git config --global url."https://git:${github_token}@github.com/".insteadOf https://github.com/`);
 }
 
 async function main() {
-  const key = core.getInput("key", { required: true });
   const registry = core.getInput("registry", { required: true });
+  const protocol = core.getInput("protocol", { required: true });
+  const ssh_key = core.getInput("ssh-key", { required: protocol == "ssh" });
+  const github_token = core.getInput("github-token", { required: protocol == "https" });
 
-  await startAgent();
-  await addKey(key);
-  await updateKnownHosts();
-  await cloneRegistry(`git@github.com:${registry}.git`);
-  if (registry != "JuliaRegistries/General") {
-    await cloneRegistry("git@github.com:JuliaRegistries/General.git", "General");
+  if (protocol === "ssh") {
+    await startSshAgent();
+    await addSshKey(ssh_key);
+    await updateKnownHosts();
+    await configureGitInsteadOfSsh();
+    await cloneRegistry(`git@github.com:${registry}.git`);
+    if (registry != "JuliaRegistries/General") {
+      await cloneRegistry("git@github.com:JuliaRegistries/General.git", "General");
+    }
+  } else {
+    await configureGitInsteadOfHttps(github_token);
+    await cloneRegistry(`https://github.com/${registry}.git`);
+    if (registry != "JuliaRegistries/General") {
+      await cloneRegistry("https://github.com/JuliaRegistries/General.git", "General");
+    }
   }
-  await configureGit();
 }
 
 if (!module.parent) {
